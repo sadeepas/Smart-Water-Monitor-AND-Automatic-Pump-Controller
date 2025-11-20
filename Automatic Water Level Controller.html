@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0A0E1A">
+  <title>Smart Water Monitor System</title>
+<link rel="icon" href="icon/1.ico" type="image/x-icon">
+  <!-- Tailwind CSS for loader -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js with date adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Chart.js Annotation Plugin for the threshold line -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    /*
+    =====================================================
+    LOADER STYLES
+    =====================================================
+    */
+    /* ===== Improved Background Animations ===== */
+    @keyframes moveWave {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes animateGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+      border-radius: 45%;
+      background: rgba(30, 144, 255, 0.1);
+      animation: moveWave 10s linear infinite;
+    }
+    .wave:nth-child(2) {
+      animation-delay: -5s;
+      animation-duration: 12s;
+      opacity: 0.6;
+    }
+   
+    .wave:nth-child(3) {
+        animation-delay: -3s;
+        animation-duration: 15s;
+        opacity: 0.4;
+    }
+    /* ===== Improved Floating Particles ===== */
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) translateX(0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) translateX(50px) scale(0.8);
+        opacity: 0;
+      }
+    }
+   
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      animation: floatUp 10s linear infinite;
+    }
+    /* ===== UI Element Animations ===== */
+    @keyframes glowPulse {
+      from { text-shadow: 0 0 8px rgba(30, 144, 255, 0.4); }
+      to { text-shadow: 0 0 20px rgba(30, 144, 255, 0.8); }
+    }
+    @keyframes fadeInScaleUp {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+   
+    @keyframes textFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes fill {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0%); }
+    }
+   
+    /* ===== Animation Utility Classes ===== */
+    .glow {
+      animation: glowPulse 2s ease-in-out infinite alternate;
+    }
+    .fade-in-scale-up {
+        animation: fadeInScaleUp 0.8s ease-out forwards;
+    }
+   
+    .text-fade-in {
+        animation: textFadeIn 0.5s ease-in-out forwards;
+    }
+    .progress-bar {
+        transition: width 4.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+   
+    .fill-animation {
+      animation: fill 4.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    /* ===== Loader Fade Out Transition ===== */
+    #initial-loader {
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    }
+    #initial-loader.fade-out {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+    .mask-drop { 
+      -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2C12 2 6 9 6 13a6 6 0 0012 0c0-4-6-11-6-11zM12 20v2m-3-2h6" /></svg>') center/contain no-repeat; 
+      mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2C12 2 6 9 6 13a6 6 0 0012 0c0-4-6-11-6-11zM12 20v2m-3-2h6" /></svg>') center/contain no-repeat;
+    }
+
+    /*
+    =====================================================
+    MAIN DASHBOARD STYLES - ENHANCED MOBILE RESPONSIVENESS
+    =====================================================
+    */
+    :root {
+      --base: #0A0E1A;
+      --panel-bg: rgba(15, 20, 35, 0.85);
+      --border-light: rgba(0, 240, 255, 0.2);
+      --border-hover: rgba(0, 240, 255, 0.6);
+      --accent-cyan: #00F0FF;
+      --accent-magenta: #A259FF;
+      --accent-green: #34D399;
+      --accent-red: #F43F5E;
+      --accent-orange: #FB923C;
+      --accent-purple: #8B5CF6;
+      --slate-100: #f1f5f9;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-900: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+   
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: var(--base);
+      color: var(--slate-100);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+      touch-action: manipulation; /* Improves mobile scrolling */
+    }
+    .mono { font-family: 'Roboto Mono', monospace; }
+    /* Animated background */
+    .quantum-bg {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      background: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+                  radial-gradient(circle at 80% 80%, rgba(162, 89, 255, 0.1) 1px, transparent 1px);
+      background-size: 110px 110px, 150px 150px;
+      animation: bg-pan 60s linear infinite;
+    }
+    @keyframes bg-pan {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+    /* Glassmorphism cards */
+    .card {
+      background: linear-gradient(135deg, var(--panel-bg), rgba(15, 20, 35, 0.9));
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      position: relative;
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+   
+    /* Main Layout - Enhanced for Mobile */
+    .container {
+      max-width: 80rem;
+      margin: 0 auto;
+      padding: 0.5rem; /* Reduced for mobile */
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr; /* Single column by default for mobile */
+      gap: 1rem;
+    }
+   
+    /* Header - Mobile Optimized */
+    header {
+      padding: 1rem 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .header-content {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .logo { display: flex; align-items: center; gap: 0.5rem; }
+    .logo h1 {
+      font-size: 1.125rem; /* Optimized for small screens */
+      font-weight: 700;
+      background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    .header-actions { 
+      display: flex; 
+      flex-wrap: wrap; 
+      align-items: center; 
+      gap: 0.25rem; 
+      min-width: fit-content;
+    }
+    /* Main Gauge Display - Mobile */
+    .gauge-card {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .gauge-container {
+        position: relative;
+        width: 140px; height: 140px; /* Slightly smaller for very small screens */
+        margin-bottom: 0.75rem;
+    }
+    .gauge-track, .gauge-fill {
+        fill: none; stroke-width: 8; /* Thinner for mobile */
+        transform: rotate(-90deg); transform-origin: 50% 50%;
+    }
+    .gauge-track { stroke: var(--border-light); }
+    .gauge-fill {
+        stroke: var(--accent-cyan);
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.5s ease-out;
+    }
+    .gauge-value {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+    }
+    #lastWater {
+        font-size: 2rem; /* Smaller for mobile */
+        font-weight: 700; color: var(--slate-100);
+        font-family: 'Roboto Mono', monospace;
+    }
+    .gauge-label {
+        font-size: 0.7rem; color: var(--slate-400);
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    #pumpState {
+        font-size: 0.9rem; font-weight: 600;
+        font-family: 'Roboto Mono', monospace;
+        margin-top: 0.25rem;
+    }
+   
+    /* Control Panel - Touch Optimized */
+    .control-panel .control-group {
+      padding-bottom: 1rem; margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .control-panel .control-group:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+   
+    /* Chart Card - Mobile Height */
+    .chart-card { padding: 0.75rem; }
+    .chart-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 0.75rem;
+    }
+    .chart-header h3 { font-size: 0.9rem; font-weight: 600; margin: 0; }
+    .chart-container { position: relative; height: 12rem; } /* Smaller for mobile */
+    /* Status and Logs Tabs - Mobile */
+    .tab-card { padding: 0; }
+    .tab-nav {
+      display: flex; border-bottom: 1px solid var(--border-light);
+      padding: 0 0.5rem;
+      overflow-x: auto; /* Horizontal scroll if needed */
+    }
+    .tab-btn {
+      padding: 0.75rem 0.75rem; margin-bottom: -1px; /* Larger touch target */
+      border: none; border-bottom: 2px solid transparent;
+      background: none; color: var(--slate-400);
+      cursor: pointer; font-weight: 500; transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .status-list { padding: 0.75rem; }
+    .status-item {
+      display: flex; justify-content: space-between;
+      padding: 0.5rem 0; font-size: 0.8rem;
+    }
+    #log {
+      height: 8rem; overflow-y: auto;
+      background-color: rgba(10, 14, 26, 0.5);
+      margin: 0.75rem; padding: 0.5rem;
+      border-radius: 8px; font-size: 0.7rem;
+    }
+   
+    /* Touch-friendly Components - Enhanced */
+    .btn-glow {
+      position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.5rem; padding: 1rem 1.25rem; /* Larger padding for touch */
+      font-size: 0.875rem; font-weight: 600;
+      border-radius: 12px; border: 2px solid;
+      background: transparent;
+      transition: background-color 0.2s, color 0.2s, transform 0.1s;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      min-height: 44px; /* iOS touch target minimum */
+      min-width: 44px;
+    }
+    .btn-glow:active { transform: scale(0.98); }
+    .btn-glow.primary { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .btn-glow.primary:hover, .btn-glow.primary:active { background-color: rgba(0, 240, 255, 0.1); }
+    .btn-glow.danger { border-color: var(--accent-red); color: var(--accent-red); }
+    .btn-glow.danger:hover, .btn-glow.danger:active { background-color: rgba(244, 63, 94, 0.1); }
+    .btn-glow.success { border-color: var(--accent-green); color: var(--accent-green); }
+    .btn-glow.success:hover, .btn-glow.success:active { background-color: rgba(52, 211, 153, 0.1); }
+    .btn-glow.secondary { border-color: var(--accent-purple); color: var(--accent-purple); }
+    .btn-glow.secondary:hover, .btn-glow.secondary:active { background-color: rgba(139, 92, 246, 0.1); }
+   
+    /* Touch-friendly Slider - Enhanced */
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      height: 6px; background: var(--border-light);
+      border-radius: 3px; outline: none; width: 100%;
+      padding: 1rem 0; /* More vertical space */
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      height: 2rem; width: 2rem; /* Larger thumb */
+      border-radius: 50%; background: var(--accent-cyan);
+      border: 2px solid var(--base); cursor: pointer;
+    }
+    .flex-1 { flex: 1; }
+    .hidden { display: none; }
+   
+    /* Modal & Toast - Mobile Fullscreen */
+    .modal-overlay{
+      position:fixed;inset:0;background-color:rgba(0,0,0,.7);backdrop-filter:blur(1rem);z-index:50;
+      display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;visibility:hidden;transition:opacity .3s;
+    }
+    .modal-overlay.show{opacity:1;visibility:visible}
+    .modal-content{
+      position:relative;width:100%;max-width:28rem;max-height:90vh;overflow-y:auto;
+      margin: 1rem;
+    }
+    .toast{
+      position:fixed;bottom:1rem;left:1rem;right:1rem;z-index:50;padding:1rem;border-radius:.75rem;
+      box-shadow:0 10px 15px -3px rgba(0,0,0,.1);transform:translateY(200%);transition:transform .3s;max-width:22rem;margin:auto;
+      font-size: 0.875rem;
+    }
+    .toast.show{transform:translateY(0)}
+    .toast.success{background-color:rgba(52,211,153,.2);border:1px solid var(--accent-green);color:var(--accent-green)}
+    .toast.error{background-color:rgba(244,63,94,.2);border:1px solid var(--accent-red);color:var(--accent-red)}
+    .toast.warning{background-color:rgba(251,146,60,.2);border:1px solid var(--accent-orange);color:var(--accent-orange)}
+    .toggle-switch{
+      position:relative;display:inline-flex;height:1.5rem;width:3rem;flex-shrink:0;cursor:pointer;border-radius:9999px;
+      border:2px solid var(--border-light);transition:all .3s ease-in-out;overflow:hidden
+    }
+    .toggle-switch[aria-checked=true]{background-color:var(--accent-cyan);border-color:var(--accent-cyan)}
+    .toggle-switch>span{
+      position:absolute;left:.125rem;top:.125rem;height:1.125rem;width:1.125rem;transform:translateX(0);border-radius:50%;
+      background-color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:all .3s ease-in-out
+    }
+    .toggle-switch[aria-checked=true]>span{transform:translateX(1.375rem)}
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+   
+    footer { 
+      text-align: center; 
+      margin-top: 2rem; 
+      font-size: 0.875rem; 
+      color: var(--slate-400); 
+      padding: 2rem 1rem;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      background: linear-gradient(135deg, rgba(15, 20, 35, 0.9), rgba(10, 14, 26, 0.8));
+      border-top: 1px solid var(--border-light);
+      border-radius: 16px 16px 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--accent-cyan), transparent);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-light);
+      color: var(--slate-300);
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+    .footer-links a:hover {
+      background: var(--accent-cyan);
+      color: var(--base);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
+    }
+    .footer-desc {
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.5;
+      opacity: 0.8;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+   
+    /*
+    ===========================================
+    TABLET & DESKTOP OVERRIDES
+    ===========================================
+    */
+    @media (min-width: 768px) {
+      .container { padding: 1.5rem; }
+      .main-grid { gap: 1.5rem; }
+      .logo h1 { font-size: 1.5rem; }
+      .header-actions { gap: 0.75rem; }
+      .gauge-container { width: 180px; height: 180px; }
+      #lastWater { font-size: 3rem; }
+      .chart-container { height: 20rem; }
+      #log { height: 12rem; }
+      .card {
+        transition: transform 0.3s ease, border-color 0.3s ease;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        border-color: var(--border-hover);
+      }
+      .card { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+      .md-only { display: inline; }
+      footer { padding: 3rem 2rem; }
+      .footer-links { gap: 2rem; }
+      .footer-links a { width: 48px; height: 48px; }
+      .btn-glow { padding: 0.75rem 1rem; min-height: 40px; }
+    }
+    @media (min-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr 1.5fr; /* Two-column layout on desktop */
+      }
+      .card { backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); }
+      .header-actions { gap: 1rem; }
+    }
+    /* Landscape orientation on mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .gauge-container { width: 120px; height: 120px; }
+      #lastWater { font-size: 1.75rem; }
+      .chart-container { height: 10rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Initial Loader Screen -->
+  <div id="initial-loader" class="fixed inset-0 z-50 relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-sky-900 to-blue-900">
+    <!-- ===== Animated Gradient Background ===== -->
+    <div class="absolute inset-0 bg-gradient-to-br from-sky-950 via-blue-900 to-blue-700" style="animation: animateGradient 15s ease infinite; background-size: 200% 200%;"></div>
+    <!-- ===== Glowing radial light center ===== -->
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,144,255,0.2),transparent_60%)]"></div>
+    <!-- ===== Animated background waves ===== -->
+    <div class="absolute bottom-0 left-0 w-full h-1/2 overflow-hidden opacity-80">
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+    </div>
+    <!-- ===== Floating particles ===== -->
+    <div id="particles-container" class="absolute inset-0 overflow-hidden"></div>
+    <!-- Main Glassmorphic Loader Card -->
+    <div class="fade-in-scale-up z-10 backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl p-8 sm:p-10 text-center shadow-2xl shadow-sky-500/10 max-w-md w-11/12">
+      <!-- Animated Logo -->
+      <div class="mx-auto mb-6 w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-700 shadow-lg relative overflow-hidden">
+          <!-- The background water drop -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-sky-900 absolute" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v6h-2zm0 8h2v2h-2z" opacity="0.2" />
+          </svg>
+          <!-- The filling water drop -->
+          <div class="w-12 h-12 absolute mask-drop">
+               <div id="waterFill" class="w-full h-full bg-white transform translate-y-full"></div>
+          </div>
+      </div>
+      <!-- Title -->
+      <h1 class="text-2xl sm:text-3xl font-bold text-white glow mb-2 tracking-wide">
+        Automatic Water Level Controller
+      </h1>
+      <p class="text-sky-300 mb-8 text-sm uppercase tracking-widest">Smart System Initializing</p>
+      <!-- Progress bar -->
+      <div class="w-full bg-white/10 rounded-full h-2.5 overflow-hidden mb-4 border border-white/10 shadow-inner">
+        <div id="progressBar" class="progress-bar bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full"></div>
+      </div>
+      <!-- Dynamic progress text -->
+      <p class="text-sky-200 text-sm h-5" id="progressTextContainer">
+          <span id="progressText" class="inline-block"></span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Screen -->
+  <div id="main-screen" class="min-h-screen" style="display: none; opacity: 0; transition: opacity 0.5s ease-in-out;">
+    <div class="quantum-bg"></div>
+    <div class="container">
+      <!-- Header -->
+      <header class="card" style="animation-delay: 0.1s;">
+        <div class="header-content">
+          <div class="logo">
+            <i data-feather="droplets" style="width:28px; height:28px; color: var(--accent-cyan);"></i>
+            <h1>SMART WATER MONITOR SYSTEM</h1>
+          </div>
+          <div class="header-actions">
+            <button id="bleConnectBtn" class="btn-glow primary"><i data-feather="bluetooth" style="width:16px;"></i><span class="md-only"> BLE</span></button>
+            <button id="wifiConnectBtn" class="btn-glow primary"><i data-feather="wifi" style="width:16px;"></i><span class="md-only"> WiFi</span></button>
+            <button id="disconnectBtn" class="btn-glow danger hidden"><i data-feather="x" style="width:16px;"></i><span class="md-only"> Disconnect</span></button>
+            <button id="demoBtn" class="btn-glow secondary"><i data-feather="play" style="width:16px;"></i><span class="md-only"> Demo</span></button>
+            <button id="settingsBtn" class="btn-glow secondary"><i data-feather="settings" style="width:16px;"></i></button>
+          </div>
+        </div>
+      </header>
+      <!-- Main Content Grid -->
+      <main class="main-grid">
+        <!-- Left Column: Gauge and Controls -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+         
+          <!-- Water Level Gauge -->
+          <section class="card gauge-card" style="animation-delay: 0.2s;">
+              <div class="gauge-container">
+                  <svg viewBox="0 0 100 100">
+                      <circle class="gauge-track" cx="50" cy="50" r="45"></circle>
+                      <circle id="waterProgressFill" class="gauge-fill" cx="50" cy="50" r="45" stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
+                  </svg>
+                  <div class="gauge-value">
+                      <span id="lastWater">--</span>
+                      <span class="gauge-label">ADC Value</span>
+                  </div>
+              </div>
+              <div>
+                <span class="gauge-label">Pump Status</span>
+                <p id="pumpState" class="mono text-center">--</p>
+              </div>
+          </section>
+          <!-- Control Panel -->
+          <section class="card control-panel" style="padding: 1rem; animation-delay: 0.3s;">
+            <div class="control-group">
+                <label class="control-label">
+                    <span>Pump Control</span>
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button id="pumpOn" class="btn-glow success">ON</button>
+                    <button id="pumpOff" class="btn-glow danger">OFF</button>
+                </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">
+                  <span>Threshold</span>
+                  <span id="thresholdVal" class="mono">1500</span>
+              </label>
+              <input id="thresholdRange" type="range" min="0" max="4095" value="1500">
+            </div>
+             <div class="control-group">
+                <label class="control-label">
+                    <span>Data Mgmt</span>
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button id="exportCsv" class="btn-glow primary">Export</button>
+                    <button id="clearData" class="btn-glow secondary">Clear</button>
+                </div>
+            </div>
+          </section>
+        </div>
+        <!-- Right Column: Chart and Status/Logs -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+         
+          <!-- Live Chart -->
+          <section class="card chart-card" style="animation-delay: 0.4s;">
+            <div class="chart-header">
+              <h3><i data-feather="activity" style="width:18px; vertical-align: -3px; margin-right: 8px;"></i>Live Water Level</h3>
+              <button id="zoomChart" class="btn-glow secondary" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">Zoom</button>
+            </div>
+            <div class="chart-container">
+              <canvas id="waterChart"></canvas>
+            </div>
+          </section>
+          <!-- Status & Logs Tabs -->
+          <section class="card tab-card" style="animation-delay: 0.5s;">
+              <nav class="tab-nav">
+                  <button class="tab-btn active" data-tab="status">Status</button>
+                  <button class="tab-btn" data-tab="logs">Logs</button>
+              </nav>
+              <div id="statusTab" class="tab-content active">
+                <div class="status-list">
+                    <div class="status-item"><span class="label">Device</span><span id="deviceName" class="value">--</span></div>
+                    <div class="status-item"><span class="label">Connection</span><div class="ble-status" style="display:flex; align-items:center; gap: 0.5rem;"><div id="connectionStatusDot" style="width:0.75rem; height:0.75rem; border-radius:50%;"></div><span id="connectionState" class="value">IDLE</span></div></div>
+                    <div class="status-item"><span class="label">Top Sensor</span><span id="topState" class="value">--</span></div>
+                    <div class="status-item"><span class="label">Battery</span><span id="batteryLevel" class="value">--</span></div>
+                </div>
+              </div>
+              <div id="logsTab" class="tab-content">
+                <pre id="log" class="mono"></pre>
+              </div>
+          </section>
+        </div>
+      </main>
+      <!-- Settings Modal -->
+      <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content card" style="padding: 1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1.5rem;">
+            <h3 style="font-size:1.25rem; font-weight: 700;">Settings</h3>
+            <button id="closeSettings" style="padding:0.25rem; border-radius:8px; background:none; border: none; cursor:pointer;"><i data-feather="x" style="width:20px; color: var(--slate-400);"></i></button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap: 1rem;">
+            <div>
+              <label style="display:block; font-size:0.875rem; color:var(--slate-300); margin-bottom:0.5rem;">ESP32 WiFi IP Address</label>
+              <input id="wifiIp" type="text" placeholder="192.168.1.100" style="width:100%; background:var(--slate-900); border:1px solid var(--border-light); border-radius:8px; padding:0.75rem; color: var(--slate-100); font-size:0.875rem;" value="192.168.1.100">
+            </div>
+            <div>
+              <label style="display:block; font-size:0.875rem; color:var(--slate-300); margin-bottom:0.5rem;">Calibration Mode</label>
+              <button id="calibrateBtn" class="btn-glow secondary" style="width: 100%;">Start Calibration</button>
+            </div>
+            <div>
+              <label style="display:block; font-size:0.875rem; color:var(--slate-300); margin-bottom:0.5rem;">Export Format</label>
+              <select id="exportFormat" style="width:100%; background:var(--slate-900); border:1px solid var(--border-light); border-radius:8px; padding:0.75rem; color: var(--slate-100); font-size:0.875rem;">
+                <option>CSV</option>
+                <option>JSON</option>
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label style="font-size:0.875rem; color:var(--slate-300);">Notifications</label>
+              <button id="notificationsToggle" type="button" role="switch" aria-checked="true" class="toggle-switch"><span></span></button>
+            </div>
+            <div style="padding-top:1rem; border-top:1px solid var(--border-light);">
+              <button id="resetApp" style="width:100%; background:none; border:none; font-size:0.875rem; cursor:pointer; color:var(--accent-red); transition: color 0.2s;">Reset to Defaults</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="toastContainer"></div>
+     <footer>
+        <p class="text-sm drop-shadow-md mb-2">
+          Developed with ❤️ by <span class="font-semibold text-white">Sadeepa Lakshan</span>
+        </p>
+        <p class="footer-desc mb-4">A smart IoT solution for automated water level monitoring and control using ESP32, BLE, and WiFi connectivity.</p>
+        <div class="footer-links">
+          <!-- GitHub -->
+          <a href="https://github.com/sadeepas" target="_blank" rel="noopener noreferrer" title="GitHub">
+            <i class="fab fa-github"></i>
+          </a>
+          <!-- LinkedIn -->
+          <a href="https://www.linkedin.com/in/sadeepa-lakshan/" target="_blank" rel="noopener noreferrer" title="LinkedIn">
+            <i class="fab fa-linkedin"></i>
+          </a>
+          <!-- Email -->
+          <a href="mailto:sadeepapemasiri2@gmail.com" title="Email">
+            <i class="fas fa-envelope"></i>
+          </a>
+          <!-- Project Repo -->
+          <a href="https://github.com/sadeepas/smart-water-monitor" target="_blank" rel="noopener noreferrer" title="Project Repository">
+            <i class="fas fa-code-branch"></i>
+          </a>
+        </div>
+        <p class="text-xs text-gray-300 drop-shadow-sm">
+          © <span id="year"></span> All Rights Reserved
+        </p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Loader Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // --- Floating particle generator ---
+      const particleContainer = document.getElementById("particles-container");
+      if (particleContainer) {
+        for (let i = 0; i < 30; i++) {
+          const p = document.createElement("div");
+          const size = Math.random() * 5 + 2;
+          p.classList.add("particle");
+          p.style.width = `${size}px`;
+          p.style.height = `${size}px`;
+          p.style.left = `${Math.random() * 100}%`;
+          p.style.bottom = `${Math.random() * -10}vh`;
+          p.style.animationDelay = `${Math.random() * 10}s`;
+          p.style.animationDuration = `${10 + Math.random() * 10}s`;
+          particleContainer.appendChild(p);
+        }
+      }
+      // --- Loading progress simulation ---
+      const steps = [
+        "Loading sensor modules...",
+        "Calibrating water levels...",
+        "Establishing network connection...",
+        "Syncing with cloud dashboard...",
+        "System is now ready!"
+      ];
+     
+      const progressTextEl = document.getElementById("progressText");
+      const progressBarEl = document.getElementById("progressBar");
+      const waterFillEl = document.getElementById("waterFill");
+      const initialLoaderEl = document.getElementById("initial-loader");
+      let currentStep = 0;
+      const totalDuration = 4500; // ms, slightly longer than CSS animation
+      // Start the progress bar and fill animation
+      setTimeout(() => {
+        if(progressBarEl) progressBarEl.style.width = '100%';
+        if(waterFillEl) waterFillEl.classList.add('fill-animation');
+      }, 100);
+      const updateText = () => {
+        if (!progressTextEl || currentStep >= steps.length) return;
+        // Apply fade-in animation to the text
+        progressTextEl.classList.remove("text-fade-in");
+        void progressTextEl.offsetWidth; // Trigger reflow to restart animation
+        progressTextEl.textContent = steps[currentStep];
+        progressTextEl.classList.add("text-fade-in");
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          setTimeout(updateText, totalDuration / steps.length);
+        } else {
+           // --- Finalize and transition to main ---
+           setTimeout(() => {
+            if (initialLoaderEl) initialLoaderEl.classList.add("fade-out");
+            setTimeout(() => {
+              initialLoaderEl.style.display = 'none';
+              const mainScreen = document.getElementById('main-screen');
+              if (mainScreen) {
+                mainScreen.style.display = 'block';
+                setTimeout(() => {
+                  mainScreen.style.opacity = '1';
+                }, 10);
+              }
+            }, 500);
+          }, 1200);
+        }
+      };
+     
+      // Initial call to start the text updates
+      setTimeout(updateText, 200);
+    });
+  </script>
+
+  <!-- Auto update year -->
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Main Dashboard Script -->
+  <script>
+  'use strict';
+  // MOBILE-OPTIMIZED JAVASCRIPT WITH WEBSOCKET SUPPORT
+  document.addEventListener('DOMContentLoaded', () => {
+    const isMobile = window.innerWidth < 768;
+    const BLE_CONFIG = {
+      SERVICE_UUID: 'b1a4a8fe-6f7a-4c9a-9b1f-1a2d3e4f5678',
+      WATER_CHAR_UUID: 'b1a4a8fe-6f7a-4c9a-9b1f-1a2d3e4f5679',
+      COMMAND_CHAR_UUID: 'b1a4a8fe-6f7a-4c9a-9b1f-1a2d3e4f5680',
+      STATUS_CHAR_UUID: 'b1a4a8fe-6f7a-4c9a-9b1f-1a2d3e4f5681',
+    };
+    const WS_PORT = 81; // Default WebSocket port for ESP32
+    const UI = Object.fromEntries([...document.querySelectorAll('[id]')].map(el => [el.id.replace(/-([a-z])/g, (g) => g[1].toUpperCase()), el]));
+    let waterChart;
+    let records = JSON.parse(localStorage.getItem('records')) || [];
+    let connectionType = null; // 'BLE' or 'WS'
+   
+    const AppState = {
+      _state: 'IDLE',
+      device: null,
+      server: null,
+      ws: null,
+      characteristics: {},
+      settings: JSON.parse(localStorage.getItem('settings')) || { threshold: 1500, notifications: true, exportFormat: 'CSV', wifiIp: '192.168.1.100' },
+      setState(newState) {
+        this._state = newState;
+        UIUpdater.updateForState(newState);
+      },
+      getState() { return this._state; },
+      save() {
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+        localStorage.setItem('records', JSON.stringify(records.slice(-1000)));
+      },
+    };
+    const DemoController = {
+      intervalId: null, waterLevel: 3000, pumpIsOn: false, battery: 100,
+      consumptionRate: 15, fillRate: 100, noise: 25, topSensorThreshold: 4000,
+      start() {
+        if (this.intervalId) return;
+        AppState.setState('DEMO');
+        NotificationManager.show('Interactive demo started', 'success');
+        log('Starting interactive demo mode...');
+        UI.deviceName.textContent = 'Simulated Device';
+        this.updateUI();
+        this.intervalId = setInterval(() => this.simulationTick(), 1000);
+      },
+      stop() {
+        if (!this.intervalId) return;
+        clearInterval(this.intervalId); this.intervalId = null;
+        AppState.setState('IDLE');
+        NotificationManager.show('Demo mode stopped', 'success'); log('Demo mode stopped.');
+      },
+      simulationTick() {
+        if (this.waterLevel < AppState.settings.threshold && !this.pumpIsOn) this.setPumpState(true);
+        else if (this.waterLevel >= this.topSensorThreshold && this.pumpIsOn) this.setPumpState(false);
+        if (this.pumpIsOn) { this.waterLevel += this.fillRate; } else { this.waterLevel -= this.consumptionRate; }
+        this.waterLevel += (Math.random() * this.noise * 2) - this.noise;
+        this.waterLevel = Math.max(0, Math.min(4095, this.waterLevel));
+        this.battery = Math.max(0, this.battery - (this.pumpIsOn ? 0.2 : 0.05));
+        this.updateUI();
+      },
+      updateUI() {
+          const waterValue = Math.round(this.waterLevel);
+          UIUpdater.addDataPoint(waterValue);
+          UIUpdater.updatePumpStatus(this.pumpIsOn ? 'ON' : 'OFF');
+          UIUpdater.updateSensorStatus(waterValue >= this.topSensorThreshold ? 'TRIGGERED' : 'OK');
+          UI.batteryLevel.textContent = `${Math.round(this.battery)}%`;
+      },
+      setPumpState(isOn) {
+          this.pumpIsOn = isOn;
+          UIUpdater.updatePumpStatus(this.pumpIsOn ? 'ON' : 'OFF');
+      },
+      handleCommand(command) {
+          log(`Demo received command: ${command}`);
+          if (command === 'ON') { this.setPumpState(true); }
+          else if (command === 'OFF') { this.setPumpState(false); }
+          else if (command.startsWith('TH:')) {
+              NotificationManager.show(`Demo threshold set to ${command.split(':')[1]}`, 'success');
+          }
+      }
+    };
+    const BLEController = {
+      async connect() {
+        if (!navigator.bluetooth) {
+          NotificationManager.show('Web Bluetooth not supported', 'error'); return;
+        }
+        try {
+          AppState.setState('REQUESTING');
+          log('Requesting BLE device...');
+          AppState.device = await navigator.bluetooth.requestDevice({ filters: [{ services: [BLE_CONFIG.SERVICE_UUID] }] });
+          AppState.device.addEventListener('gattserverdisconnected', BLEController.onDisconnect);
+          UI.deviceName.textContent = AppState.device.name || 'Unknown';
+          AppState.setState('CONNECTING');
+          log('Connecting to device...');
+          AppState.server = await AppState.device.gatt.connect();
+          const service = await AppState.server.getPrimaryService(BLE_CONFIG.SERVICE_UUID);
+          AppState.characteristics = {
+            water: await service.getCharacteristic(BLE_CONFIG.WATER_CHAR_UUID),
+            command: await service.getCharacteristic(BLE_CONFIG.COMMAND_CHAR_UUID),
+            status: await service.getCharacteristic(BLE_CONFIG.STATUS_CHAR_UUID),
+          };
+          await AppState.characteristics.water.startNotifications();
+          AppState.characteristics.water.addEventListener('characteristicvaluechanged', onWaterNotification);
+          const statusValue = await AppState.characteristics.status.readValue();
+          UIUpdater.updateStatusFromJson(new TextDecoder().decode(statusValue));
+          AppState.setState('CONNECTED');
+          connectionType = 'BLE';
+          NotificationManager.show('BLE Connected successfully', 'success');
+          log('BLE connection established.');
+        } catch (err) {
+          log(`BLE Error: ${err.message}`);
+          NotificationManager.show(`BLE Connection failed`, 'error');
+          AppState.setState('ERROR');
+        }
+      },
+      disconnect() { 
+        if (AppState.device?.gatt.connected) AppState.device.gatt.disconnect(); 
+        connectionType = null;
+      },
+      onDisconnect() {
+        log('BLE Device disconnected');
+        connectionType = null;
+        AppState.setState('IDLE');
+        NotificationManager.show('BLE Device disconnected', 'warning');
+      },
+      async sendCommand(text) {
+          if (AppState.getState() !== 'CONNECTED' || connectionType !== 'BLE') { 
+            NotificationManager.show('Not connected via BLE', 'error'); 
+            return; 
+          }
+          try {
+              await AppState.characteristics.command.writeValue(new TextEncoder().encode(text));
+              log(`BLE Sent: ${text}`);
+          } catch (err) {
+              log(`BLE Send failed: ${err.message}`);
+              NotificationManager.show(`BLE Command failed`, 'error');
+          }
+      },
+    };
+    const WiFiController = {
+      async connect() {
+        const ip = AppState.settings.wifiIp;
+        if (!ip) {
+          NotificationManager.show('Please set ESP32 IP in settings', 'error');
+          return;
+        }
+        try {
+          AppState.setState('REQUESTING');
+          log(`Connecting to WebSocket at ws://${ip}:${WS_PORT}...`);
+          AppState.ws = new WebSocket(`ws://${ip}:${WS_PORT}`);
+          AppState.ws.onopen = () => {
+            AppState.setState('CONNECTING');
+            log('WebSocket connected');
+            // Request initial status
+            AppState.ws.send('STATUS');
+            AppState.ws.onmessage = onWebSocketMessage;
+            AppState.ws.onclose = WiFiController.onDisconnect;
+            AppState.ws.onerror = (err) => {
+              log(`WebSocket Error: ${err}`);
+              NotificationManager.show('WebSocket Error', 'error');
+              AppState.setState('ERROR');
+            };
+            UI.deviceName.textContent = `ESP32 @ ${ip}`;
+            setTimeout(() => {
+              AppState.setState('CONNECTED');
+              connectionType = 'WS';
+              NotificationManager.show('WiFi Connected successfully', 'success');
+            }, 1000);
+          };
+        } catch (err) {
+          log(`WiFi Connection Error: ${err.message}`);
+          NotificationManager.show(`WiFi Connection failed`, 'error');
+          AppState.setState('ERROR');
+        }
+      },
+      disconnect() { 
+        if (AppState.ws) {
+          AppState.ws.close();
+          AppState.ws = null;
+        }
+        connectionType = null;
+      },
+      onDisconnect() {
+        log('WebSocket disconnected');
+        connectionType = null;
+        AppState.setState('IDLE');
+        NotificationManager.show('WiFi Disconnected', 'warning');
+      },
+      sendCommand(text) {
+        if (AppState.getState() !== 'CONNECTED' || connectionType !== 'WS') { 
+          NotificationManager.show('Not connected via WiFi', 'error'); 
+          return; 
+        }
+        if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+          AppState.ws.send(text);
+          log(`WS Sent: ${text}`);
+        } else {
+          NotificationManager.show('WebSocket not ready', 'error');
+        }
+      },
+    };
+    function onWaterNotification(event) {
+      const value = new TextDecoder().decode(event.target.value);
+      const v = parseInt(value);
+      if (!isNaN(v)) {
+        UIUpdater.addDataPoint(v);
+      } else {
+        try {
+          const j = JSON.parse(value);
+          if (j.water !== undefined) { UIUpdater.addDataPoint(Number(j.water)); }
+          UIUpdater.updateStatusFromJson(value);
+        } catch (e) { log('Received non-numeric data: ' + value); }
+      }
+    }
+    function onWebSocketMessage(event) {
+      const message = event.data;
+      log(`WS Received: ${message}`);
+      const v = parseInt(message);
+      if (!isNaN(v)) {
+        UIUpdater.addDataPoint(v);
+      } else {
+        try {
+          const j = JSON.parse(message);
+          if (j.water !== undefined) { UIUpdater.addDataPoint(Number(j.water)); }
+          UIUpdater.updateStatusFromJson(message);
+        } catch (e) { 
+          // Could be status or other text
+          if (message === 'STATUS') {
+            // Handle status response if needed
+          } else {
+            log('Received non-numeric data: ' + message);
+          }
+        }
+      }
+    }
+    const UIUpdater = {
+      updateForState(state) {
+        const states = {
+          IDLE: { color: 'var(--accent-orange)', hidden: { bleConnect: false, wifiConnect: false, disconnect: true, demo: false } },
+          DEMO: { color: 'var(--accent-magenta)', hidden: { bleConnect: true, wifiConnect: true, disconnect: false, demo: false } },
+          CONNECTED: { color: 'var(--accent-green)', hidden: { bleConnect: true, wifiConnect: true, disconnect: false, demo: true } },
+          REQUESTING: { color: 'var(--accent-cyan)', hidden: { bleConnect: true, wifiConnect: true, disconnect: true, demo: true } },
+          CONNECTING: { color: 'var(--accent-cyan)', hidden: { bleConnect: true, wifiConnect: true, disconnect: true, demo: true } },
+          ERROR: { color: 'var(--accent-red)', hidden: { bleConnect: false, wifiConnect: false, disconnect: true, demo: false } },
+        };
+        const s = states[state] || states.IDLE;
+        UI.bleConnectBtn.classList.toggle('hidden', s.hidden.bleConnect);
+        UI.wifiConnectBtn.classList.toggle('hidden', s.hidden.wifiConnect);
+        UI.disconnectBtn.classList.toggle('hidden', s.hidden.disconnect);
+        UI.demoBtn.classList.toggle('hidden', s.hidden.demo);
+        UI.demoBtn.innerHTML = state === 'DEMO' ? '<i data-feather="pause" style="width:16px;"></i><span class="md-only"> Stop</span>' : '<i data-feather="play" style="width:16px;"></i><span class="md-only"> Demo</span>';
+        feather.replace();
+        UI.connectionState.textContent = state + (connectionType ? ` (${connectionType})` : '');
+        UI.connectionStatusDot.style.backgroundColor = s.color;
+        if (state === 'IDLE' || state === 'ERROR') this.resetUI();
+      },
+      resetUI() {
+        UI.lastWater.textContent = '--';
+        UI.pumpState.textContent = '--';
+        UI.topState.textContent = '--';
+        UI.batteryLevel.textContent = '--';
+        UI.deviceName.textContent = '--';
+        UI.waterProgressFill.style.strokeDashoffset = 282.7;
+        if(waterChart) {
+            waterChart.data.labels = [];
+            waterChart.data.datasets[0].data = [];
+            waterChart.update();
+        }
+      },
+      addDataPoint(value) {
+        const time = new Date();
+        if(!waterChart) return;
+        waterChart.data.labels.push(time);
+        waterChart.data.datasets[0].data.push(value);
+        const maxDataPoints = isMobile ? 30 : 100; /* Fewer points on mobile for performance */
+        if (waterChart.data.labels.length > maxDataPoints) {
+          waterChart.data.labels.shift();
+          waterChart.data.datasets[0].data.shift();
+        }
+        waterChart.update('none');
+        records.push({ ts: time.toISOString(), value });
+        UI.lastWater.textContent = value;
+       
+        const percentage = Math.max(0, Math.min(1, value / 4095));
+        const circumference = 282.7;
+        UI.waterProgressFill.style.strokeDashoffset = circumference * (1 - percentage);
+      },
+      updatePumpStatus(state) {
+        UI.pumpState.textContent = state;
+        UI.pumpState.style.color = state === 'ON' ? 'var(--accent-green)' : 'var(--accent-red)';
+      },
+      updateSensorStatus(state) {
+        UI.topState.textContent = state;
+        UI.topState.style.color = state === 'TRIGGERED' ? 'var(--accent-red)' : 'var(--accent-green)';
+      },
+      updateStatusFromJson(text) {
+        try {
+          const obj = JSON.parse(text);
+          if (obj.pump !== undefined) this.updatePumpStatus(obj.pump ? 'ON' : 'OFF');
+          if (obj.top !== undefined) this.updateSensorStatus(obj.top ? 'TRIGGERED' : 'OK');
+          if (obj.battery !== undefined) UI.batteryLevel.textContent = `${obj.battery}%`;
+        } catch (e) { /* silent fail */ }
+      },
+    };
+    const NotificationManager = {
+      show(message, type = 'info') {
+        if (!AppState.settings.notifications) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<i data-feather="${type === 'success' ? 'check-circle' : 'alert-triangle'}" style="width:20px; vertical-align: -4px; margin-right: 8px;"></i>${message}`;
+        UI.toastContainer.appendChild(toast);
+        feather.replace({width: '1em', height: '1em'}); // Render new icon
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 4000);
+      },
+    };
+    function setupChart() {
+      const ctx = UI.waterChart.getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+      gradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
+      gradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      waterChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Water Level', data: [], tension: 0.4, borderWidth: 2, pointRadius: 0, borderColor: 'var(--accent-cyan)', backgroundColor: gradient, fill: true, }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: isMobile ? false : true, // Disable animation on mobile
+          scales: {
+            y: { min: 0, max: 4095, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71, 85, 105, 0.2)' } },
+            x: { type: 'time', time: { unit: 'second' }, ticks: { color: '#94a3b8', maxTicksLimit: isMobile ? 4 : 8 }, grid: { display: false } },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true },
+            annotation: {
+              annotations: {
+                thresholdLine: {
+                  type: 'line',
+                  yMin: AppState.settings.threshold,
+                  yMax: AppState.settings.threshold,
+                  borderColor: 'var(--accent-orange)',
+                  borderWidth: 2,
+                  borderDash: [6, 6],
+                  label: { content: 'Threshold', enabled: !isMobile, position: 'end', backgroundColor: 'rgba(0,0,0,0.5)' }
+                }
+              }
+            }
+          },
+        },
+      });
+    }
+    function sendCommand(text) {
+      if (AppState.getState() === 'DEMO') { 
+        DemoController.handleCommand(text); 
+        return; 
+      }
+      if (connectionType === 'BLE') {
+        BLEController.sendCommand(text);
+      } else if (connectionType === 'WS') {
+        WiFiController.sendCommand(text);
+      }
+    }
+    function setupEventListeners() {
+      UI.bleConnectBtn.addEventListener('click', BLEController.connect);
+      UI.wifiConnectBtn.addEventListener('click', WiFiController.connect);
+      UI.disconnectBtn.addEventListener('click', () => { 
+        if (AppState.getState() === 'DEMO') {
+          DemoController.stop();
+        } else if (connectionType === 'BLE') {
+          BLEController.disconnect();
+        } else if (connectionType === 'WS') {
+          WiFiController.disconnect();
+        }
+      });
+      UI.demoBtn.addEventListener('click', () => { AppState.getState() === 'DEMO' ? DemoController.stop() : DemoController.start(); });
+      UI.pumpOn.addEventListener('click', () => sendCommand('ON'));
+      UI.pumpOff.addEventListener('click', () => sendCommand('OFF'));
+     
+      const sendThresholdCommand = () => {
+        const threshold = UI.thresholdRange.value;
+        sendCommand(`TH:${threshold}`);
+      };
+      UI.thresholdRange.addEventListener('input', () => {
+        const threshold = parseInt(UI.thresholdRange.value);
+        UI.thresholdVal.textContent = threshold;
+        AppState.settings.threshold = threshold;
+        if (waterChart) {
+            waterChart.options.plugins.annotation.annotations.thresholdLine.yMin = threshold;
+            waterChart.options.plugins.annotation.annotations.thresholdLine.yMax = threshold;
+            waterChart.update('none');
+        }
+      });
+      // Send command only when user finishes sliding
+      UI.thresholdRange.addEventListener('change', () => {
+          sendThresholdCommand();
+          AppState.save();
+      });
+     
+      UI.exportCsv.addEventListener('click', () => {
+        if (!records.length) { NotificationManager.show('No data to export', 'warning'); return; }
+        const format = AppState.settings.exportFormat;
+        const dataStr = format === 'CSV' ? 'timestamp,value\n' + records.map(r => `${r.ts},${r.value}`).join('\n') : JSON.stringify(records, null, 2);
+        const blob = new Blob([dataStr], { type: format === 'CSV' ? 'text/csv' : 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `water_data.${format.toLowerCase()}`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+      UI.clearData.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all recorded data?')) {
+          records = [];
+          UIUpdater.resetUI();
+          AppState.save();
+          NotificationManager.show('Data cleared', 'success');
+        }
+      });
+      // Modal Listeners
+      UI.settingsBtn.addEventListener('click', () => {
+          const modal = document.getElementById('settingsModal');
+          if (modal) modal.classList.add('show');
+          UI.wifiIp.value = AppState.settings.wifiIp;
+      });
+      UI.closeSettings.addEventListener('click', () => {
+          const modal = document.getElementById('settingsModal');
+          if (modal) modal.classList.remove('show');
+          AppState.settings.wifiIp = UI.wifiIp.value;
+          AppState.save();
+      });
+     
+      const settingsModal = document.getElementById('settingsModal');
+      if (settingsModal) {
+          settingsModal.addEventListener('click', (e) => {
+              if (e.target === settingsModal) {
+                settingsModal.classList.remove('show');
+                AppState.settings.wifiIp = UI.wifiIp.value;
+                AppState.save();
+              }
+          });
+      }
+      UI.calibrateBtn.addEventListener('click', () => sendCommand('CALIBRATE'));
+      UI.exportFormat.addEventListener('change', (e) => { AppState.settings.exportFormat = e.target.value; AppState.save(); });
+      UI.notificationsToggle.addEventListener('click', () => {
+        const isChecked = UI.notificationsToggle.getAttribute('aria-checked') === 'true';
+        UI.notificationsToggle.setAttribute('aria-checked', !isChecked);
+        AppState.settings.notifications = !isChecked;
+        AppState.save();
+      });
+      UI.resetApp.addEventListener('click', () => { if (confirm('Reset all settings and data?')) { localStorage.clear(); location.reload(); } });
+     
+      // Tab Listeners
+      document.querySelectorAll('.tab-btn').forEach(button => {
+          button.addEventListener('click', () => {
+              document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+              button.classList.add('active');
+              document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+              const tabContent = document.getElementById(button.dataset.tab + 'Tab');
+              if (tabContent) tabContent.classList.add('active');
+          });
+      });
+    }
+    function log(msg) {
+      if (UI.log) {
+        const timestamp = new Date().toLocaleTimeString();
+        UI.log.textContent += `[${timestamp}] ${msg}\n`;
+        UI.log.scrollTop = UI.log.scrollHeight;
+      }
+    }
+    function init() {
+      feather.replace();
+      setupChart();
+      setupEventListeners();
+      if(typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          setTimeout(() => Notification.requestPermission(), 3000);
+      }
+      UIUpdater.updateForState(AppState.getState());
+      UI.thresholdVal.textContent = AppState.settings.threshold;
+      UI.thresholdRange.value = AppState.settings.threshold;
+      UI.notificationsToggle.setAttribute('aria-checked', AppState.settings.notifications.toString());
+      UI.exportFormat.value = AppState.settings.exportFormat;
+      log('Smart Water Monitor Initialized with BLE & WiFi Support');
+    }
+    init();
+  });
+  </script>
+</body>
+</html>
